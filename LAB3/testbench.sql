@@ -140,60 +140,98 @@ SELECT *
 FROM ALL_PROCEDURES
 WHERE OBJECT_TYPE = 'FUNCTION';
 
-SELECT * FROM ALL_USERS;
+SELECT *
+FROM ALL_USERS;
 
 
-   SELECT OBJECT_NAME FROM ALL_OBJECTS WHERE OWNER = 'PRODUCTOR' AND OBJECT_TYPE = 'FUNCTION'
-                             MINUS
-                             SELECT OBJECT_NAME FROM ALL_OBJECTS WHERE OWNER = 'DEVELOPER' AND OBJECT_TYPE = 'FUNCTION';
-
+SELECT OBJECT_NAME
+FROM ALL_OBJECTS
+WHERE OWNER = 'PRODUCTOR'
+  AND OBJECT_TYPE = 'FUNCTION'
+MINUS
+SELECT OBJECT_NAME
+FROM ALL_OBJECTS
+WHERE OWNER = 'DEVELOPER'
+  AND OBJECT_TYPE = 'FUNCTION';
 
 
 
 SELECT *
-        FROM (SELECT OBJECT_NAME
-              FROM ALL_OBJECTS
-              WHERE OWNER = 'PRODUCTOR'
-                AND OBJECT_TYPE = 'FUNCTION'
-              MINUS
-              SELECT OBJECT_NAME
-              FROM ALL_OBJECTS
-              WHERE OWNER = 'DEVELOPER'
-                AND OBJECT_TYPE = 'FUNCTION');
+FROM (SELECT OBJECT_NAME
+      FROM ALL_OBJECTS
+      WHERE OWNER = 'PRODUCTOR'
+        AND OBJECT_TYPE = 'FUNCTION'
+      MINUS
+      SELECT OBJECT_NAME
+      FROM ALL_OBJECTS
+      WHERE OWNER = 'DEVELOPER'
+        AND OBJECT_TYPE = 'FUNCTION');
 
-    DROP PROCEDURE CHECK_FUNCTIONS_OR_PROCEDURES;
+DROP PROCEDURE CHECK_FUNCTIONS_OR_PROCEDURES;
 
-
-
-   SELECT * FROM ALL_OBJECTS WHERE OBJECT_TYPE = 'PROCEDURE';
 
 
 SELECT *
-        FROM (SELECT OBJECT_NAME
-              FROM ALL_OBJECTS
-              WHERE OWNER = 'PRODUCTOR'
-                AND OBJECT_TYPE = 'FUNCTION'
-              MINUS
-              SELECT OBJECT_NAME
-              FROM ALL_OBJECTS
-              WHERE OWNER = 'DEVELOPER'
-                AND OBJECT_TYPE = 'FUNCTION');
+FROM ALL_OBJECTS
+WHERE OBJECT_TYPE = 'PROCEDURE';
 
 
-SELECT TRIM(' ' FROM (TRANSLATE(ALL_SOURCE.TEXT, CHR(10) || CHR(13), ' '))) FROM ALL_SOURCE;
+SELECT *
+FROM (SELECT OBJECT_NAME
+      FROM ALL_OBJECTS
+      WHERE OWNER = 'PRODUCTOR'
+        AND OBJECT_TYPE = 'FUNCTION'
+      MINUS
+      SELECT OBJECT_NAME
+      FROM ALL_OBJECTS
+      WHERE OWNER = 'DEVELOPER'
+        AND OBJECT_TYPE = 'FUNCTION');
 
-SELECT * FROM ALL_INDEXES AI WHERE AI.OWNER = 'DEVELOPER';
+
+SELECT TRIM(' ' FROM (TRANSLATE(ALL_SOURCE.TEXT, CHR(10) || CHR(13), ' ')))
+FROM ALL_SOURCE;
+
+SELECT *
+FROM ALL_INDEXES AI
+WHERE AI.OWNER = 'DEVELOPER';
 
 
 
 SELECT DISTINCT dev_uniqueness, dev_index_name
-    FROM
-        (SELECT ai.index_name dev_index_name, ai.index_type dev_index_type,
-                ai.table_name dev_table_name, ai.table_type dev_table_type,
-                ai.uniqueness dev_uniqueness, aic.column_name dev_column_name,
-                aic.column_position dev_column_position
-        FROM all_indexes ai
-        INNER JOIN all_ind_columns aic
-        ON ai.index_name = aic.index_name AND ai.owner = aic.index_owner
-        WHERE ai.owner = UPPER('DEVELOPER')
-        AND NOT REGEXP_LIKE(ai.index_name, '^SYS_C\d+'))
+FROM (SELECT index_name          dev_index_name,
+             ai.index_type       dev_index_type,
+             ai.table_name       dev_table_name,
+             ai.table_type       dev_table_type,
+             uniqueness          dev_uniqueness,
+             aic.column_name     dev_column_name,
+             aic.column_position dev_column_position
+      FROM ALL_INDEXES
+               INNER JOIN all_ind_columns aic
+                          ON ALL_INDEXES.index_name = aic.index_name AND ai.owner = aic.index_owner
+      WHERE ai.owner = UPPER('DEVELOPER')
+        AND NOT REGEXP_LIKE(ai.index_name, '^SYS_C\d+'));
+
+
+
+SELECT DISTINCT DEVELOPER_UNIQUENESS, DEVELOPER_INDEX_NAME, PRODUCTOR_UNIQUENESS, PRODUCTOR_INDEX_NAME
+FROM (SELECT AI.INDEX_NAME   DEVELOPER_INDEX_NAME,
+             AI.TABLE_NAME   DEVELOPER_TABLE_NAME,
+             AI.UNIQUENESS   DEVELOPER_UNIQUENESS,
+             AIC.COLUMN_NAME DEVELOPER_COLUMN_NAME
+      FROM ALL_INDEXES AI
+               INNER JOIN ALL_IND_COLUMNS AIC
+                          ON AI.INDEX_NAME = AIC.INDEX_NAME AND AI.OWNER = AIC.INDEX_OWNER
+      WHERE AI.OWNER = UPPER('DEVELOPER')
+        AND NOT REGEXP_LIKE(AI.INDEX_NAME, '^SYS_C\d+')) DEVELOPER
+         FULL OUTER JOIN
+     (SELECT AI.INDEX_NAME   PRODUCTOR_INDEX_NAME,
+             AI.TABLE_NAME   PRODUCTOR_TABLE_NAME,
+             AI.UNIQUENESS   PRODUCTOR_UNIQUENESS,
+             AIC.COLUMN_NAME PRODUCTOR_COLUMN_NAME
+      FROM ALL_INDEXES AI
+               INNER JOIN ALL_IND_COLUMNS AIC
+                          ON AI.INDEX_NAME = AIC.INDEX_NAME AND AI.OWNER = AIC.INDEX_OWNER
+      WHERE AI.OWNER = UPPER('PRODUCTOR')
+        AND NOT REGEXP_LIKE(AI.INDEX_NAME, '^SYS_C\d+')) PRODUCTOR
+     ON DEVELOPER.DEVELOPER_TABLE_NAME = PRODUCTOR.PRODUCTOR_TABLE_NAME
+         AND DEVELOPER.DEVELOPER_COLUMN_NAME = PRODUCTOR.PRODUCTOR_COLUMN_NAME;
