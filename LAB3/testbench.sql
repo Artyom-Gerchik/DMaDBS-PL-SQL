@@ -181,3 +181,19 @@ SELECT *
 
 
 SELECT TRIM(' ' FROM (TRANSLATE(ALL_SOURCE.TEXT, CHR(10) || CHR(13), ' '))) FROM ALL_SOURCE;
+
+SELECT * FROM ALL_INDEXES AI WHERE AI.OWNER = 'DEVELOPER';
+
+
+
+SELECT DISTINCT dev_uniqueness, dev_index_name
+    FROM
+        (SELECT ai.index_name dev_index_name, ai.index_type dev_index_type,
+                ai.table_name dev_table_name, ai.table_type dev_table_type,
+                ai.uniqueness dev_uniqueness, aic.column_name dev_column_name,
+                aic.column_position dev_column_position
+        FROM all_indexes ai
+        INNER JOIN all_ind_columns aic
+        ON ai.index_name = aic.index_name AND ai.owner = aic.index_owner
+        WHERE ai.owner = UPPER('DEVELOPER')
+        AND NOT REGEXP_LIKE(ai.index_name, '^SYS_C\d+'))
